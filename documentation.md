@@ -9,7 +9,8 @@ Instructions on how to launch and configure the application are located in [READ
 ### 1.1 "Hardware"
 
 Since the FoV of the camera was unable to capture the entire surface of the plexiglass, I decided to draw a rectangle on a sheet of paper doubling as a diffuser.
-This also makes it a lot easier to assemble the setup since you only have to put the camera in the box and can then place the plexiglass with the paper on top of it and align the rectangle with the camera view when launching the program.
+This also makes it a lot easier to assemble the setup since you only have to put the camera in the box and can then place the plexiglass with the paper on top of it and align the rectangle with the camera view when launching the program.  
+**The physical rectangle is not used for any detection or calibration steps, it is purely for visual reference for the user!**
 
 ### 1.2 Calibration
 
@@ -40,6 +41,10 @@ For movement events I simply used the center of the enclosing circle described a
 The data is broadcasted using `DIPPID` with the required structure and works fine in combination with [fitts_law.py](fitts_law.py).
 The y coordinates are manually flipped before broadcasting to match the pyglet coordinate system.  
 The events that are broadcasted are also printed on the preview window.
+
+### 1.6 Aspect Ratio
+
+I found that a 16:9 aspect ratio makes the most sense since ultimately this app is supposed to map the movement of the finger 1:1 to a screen and most screens are 16:9 and the camera is as well. In order to properly match up the coordinates I had to slightly modify the code in [fitts_law.py](fitts_law.py) to match the camera's aspect ratio.
 
 ## 2. Building Process
 
