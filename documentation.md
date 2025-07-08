@@ -45,6 +45,8 @@ The events that are broadcasted are also printed on the preview window.
 
 I closed the box on the bottom to provide a stable base for the camera. For consistency when reassembling I marked the position and rotation of the camera on the inside of the box. The cable was simply routed through one of the 4 corners but doesn't matter as long as the camera is in the designated position. I flipped the cardboard that makes up the top of the box to the inside to provide more stability. The plexiglass was then put on top with a sheet of paper taped to it to act as a diffuser. As described in the first section I then drew a rectangle on the paper to indicate the touch area that the camera is able to physically see. During development I also taped down the camera however this is not necessary as long as nobody yanks on the cable.
 
+**Note: Initially I folded the top "flaps" of the box upwards so that the camera's FoV would be able to capture the entire surface but decided against it because the entire thing was unstable and not really practical/convenient to use. In my opinion drawing the visible area on the paper is a lot more practical and easier to assemble.**
+
 ## 3. Usage Guide
 
 Instructions on how to launch and configure the application are located in [README.md](README.md).
