@@ -8,6 +8,7 @@ class FingertipData:
     """Data structure to store fingertip information"""
     center: Tuple[int, int]
     radius: int
+    circularity: float
     contour: np.ndarray
     timestamp: float
     

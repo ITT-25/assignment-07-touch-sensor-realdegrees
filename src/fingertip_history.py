@@ -40,16 +40,16 @@ class FingertipHistory:
             for i, fingertip in enumerate(current_data):
                 if i in used_fingertips:
                     continue
-                    
+
                 distance = self._calculate_distance(fingertip.center, history[-1].center)
-                
+
                 # Dynamic threshold based on recent movement
                 if len(history) >= 2:
                     recent_movement = self._calculate_distance(history[-1].center, history[-2].center)
-                    threshold = max(80, recent_movement * 2)
+                    threshold = max(150, recent_movement * 2)
                 else:
-                    threshold = 80
-                
+                    threshold = 150
+
                 if distance < threshold and distance < best_distance:
                     best_match = fingertip
                     best_distance = distance
@@ -69,9 +69,9 @@ class FingertipHistory:
         # Find which fingertips were already matched
         for j in matched_indices:
             if j < len(self.histories) and self.histories[j]:
-                last_tip = self.histories[j][-1]
+                last_tip: FingertipData = self.histories[j][-1]
                 for i, fingertip in enumerate(current_data):
-                    if (fingertip.center == last_tip.center and 
+                    if (fingertip.center == last_tip.center and
                         fingertip.radius == last_tip.radius and
                         abs(fingertip.timestamp - last_tip.timestamp) < 0.1):
                         used_fingertips.add(i)
