@@ -45,77 +45,22 @@ class FingertipEventDetector:
         return events
     
     def _detect_click(self, history: List[FingertipData]) -> bool:
-        """Detect click event based on radius increase from lowest point, with circularity check"""
-        if len(history) < 3:  # Need minimum history to detect pattern
+        """Detect click event based on high radius and low circularity"""
+        if len(history) < 1:  # Need at least one data point
             return False
-        
-        # Get radii from recent history
-        radii = [tip.radius for tip in history]
-        circularities = [tip.circularity for tip in history]
 
-        # Find the lowest radius and its index
-        min_radius = min(radii)
-        min_radius_index = radii.index(min_radius)
-        
+        # Get the latest fingertip data
+        latest_tip = history[-1]
+
         # Define thresholds
-        circularity_threshold = 0.85
-        min_radius_growth_factor = 1.5
+        radius_threshold = 30.0
+        circularity_threshold = 0.9
 
-        # Look for a radius peak after the minimum, with time buffer
-        max_radius_after = -1
-        max_radius_after_index = -1
-        
-        # Start looking after the buffer period from the minimum
-        buffer_frames = max(1, int(0.3 / self.dt))
-        start_search_index = min(min_radius_index + buffer_frames, len(radii) - 1)
-        
-        for i in range(start_search_index, len(radii)):
-            if radii[i] > max_radius_after:
-                max_radius_after = radii[i]
-                max_radius_after_index = i
-        
-        # Check if we found a valid peak after the minimum
-        if max_radius_after_index == -1:
-            return False
+        # Check if the latest data meets the criteria for a tap
+        if latest_tip.radius > radius_threshold and latest_tip.circularity < circularity_threshold:
+            return True
 
-        # Check if the max radius is at least 1.5x larger than the minimum radius
-        if max_radius_after < min_radius * min_radius_growth_factor:
-            return False
-        
-        # Check if radius returns to near original low after the peak
-        radius_return_variance = 1.2  # Allow 20% variance
-        max_allowed_return_radius = min_radius * radius_return_variance
-        
-        # Look for radius returning to low after the peak
-        radius_returned = False
-        circularity_returned = False
-        
-        for i in range(max_radius_after_index + 1, len(radii)):
-            if radii[i] <= max_allowed_return_radius:
-                radius_returned = True
-                # Check if circularity also returned above threshold at this point or later
-                for j in range(i, len(circularities)):
-                    if circularities[j] > circularity_threshold:
-                        circularity_returned = True
-                        break
-                break
-        
-        if not radius_returned or not circularity_returned:
-            return False
-        
-        # Check circularity conditions at key points
-        circularity_at_min = circularities[min_radius_index]
-        circularity_at_max = circularities[max_radius_after_index]
-        
-        # Circularity at lowest radius must be above 0.8
-        if circularity_at_min <= circularity_threshold:
-            return False
-        
-        # Circularity at highest radius must be below 0.8
-        if circularity_at_max >= circularity_threshold:
-            return False
-
-        return True
+        return False
     
     def _calculate_distance(self, point1: Tuple[int, int], point2: Tuple[int, int]) -> float:
         """Calculate Euclidean distance between two points"""
