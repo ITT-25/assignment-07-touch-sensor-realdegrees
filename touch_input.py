@@ -213,7 +213,8 @@ def main(video_id: int, debug: bool, host: str, port: int, calibration_frames: i
         thresh = cv2.resize(thresh, (160, 90))
         frame[height-90:height, width-160:width] = thresh[0:90, 0:160]
         
-        cv2.imshow("Detected Box", frame)
+        if debug:
+            cv2.imshow("Detected Box", frame)
 
     try:
         while True:
