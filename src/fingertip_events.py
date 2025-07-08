@@ -49,15 +49,21 @@ class FingertipEventDetector:
         if len(history) < 1:  # Need at least one data point
             return False
 
-        # Get the latest fingertip data
-        latest_tip = history[-1]
+        # Calculate average radius and circularity over the last 0.1 seconds
+        time_window = 0.1  # seconds
+        num_samples = int(time_window / self.dt)
+        num_samples = max(1, min(num_samples, len(history)))  # Ensure valid sample count
+
+        recent_history = history[-num_samples:]
+        avg_radius = sum(tip.radius for tip in recent_history) / num_samples
+        avg_circularity = sum(tip.circularity for tip in recent_history) / num_samples
 
         # Define thresholds
         radius_threshold = 30.0
         circularity_threshold = 0.9
 
         # Check if the latest data meets the criteria for a tap
-        if latest_tip.radius > radius_threshold and latest_tip.circularity < circularity_threshold:
+        if int(avg_radius) > radius_threshold and avg_circularity < circularity_threshold:
             return True
 
         return False
