@@ -23,9 +23,17 @@ from src.recognizer import Recognizer
     type=float,
     show_default=True,
 )
-def main(debug: bool, port: int, confidence_threshold: float) -> None:
+@click.option(
+    "--detection-timer",
+    "-t",
+    default=1.5,
+    help="The amount of time in seconds to wait after the last input before making a prediction (seconds)",
+    type=float,
+    show_default=True,
+)
+def main(debug: bool, port: int, confidence_threshold: float, detection_timer: float) -> None:
     sensor = SensorUDP(port)
-    recognizer = Recognizer(confidence_threshold=confidence_threshold)
+    recognizer = Recognizer(confidence_threshold=confidence_threshold, detection_timer=detection_timer)
 
     def handle_movement(data):
         recognizer.on_point((data['x'], 450 - data['y'])) # Invert y because we are receiving pyglet adjusted coordinates
@@ -53,7 +61,7 @@ def main(debug: bool, port: int, confidence_threshold: float) -> None:
             
             # Position for live raster
             live_x = 10
-            live_y = 80 + raster_size + 30  # Below final raster with padding
+            live_y = 80 + raster_size + 30
             
             # Add live raster with border
             cv2.rectangle(img, (live_x-2, live_y-2), (live_x+raster_size+2, live_y+raster_size+2), (0, 255, 0), 2)
@@ -82,12 +90,12 @@ def main(debug: bool, port: int, confidence_threshold: float) -> None:
             # Set border color based on confidence
             border_color = (0, 255, 0) if recognizer.prediction.confidence > recognizer.confidence_threshold else (0, 0, 255)
             
-            # Add final raster with border
             cv2.rectangle(img, (final_x-2, final_y-2), (final_x+raster_size+2, final_y+raster_size+2), border_color, 2)
             img[final_y:final_y+raster_size, final_x:final_x+raster_size] = raster_img_color
 
         # Display the visualization
-        cv2.imshow("Preview", img)
+        if debug:
+            cv2.imshow("Preview", img)
 
     try:
         while True:

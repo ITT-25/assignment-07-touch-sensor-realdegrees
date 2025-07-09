@@ -24,7 +24,7 @@ class Prediction:
 
 
 class Recognizer:
-    def __init__(self, model_path: str = "text_input.keras", *, confidence_threshold: float):
+    def __init__(self, model_path: str = "text_input.keras", *, confidence_threshold: float, detection_timer: float) -> None:
         self.model_path = model_path
         self.confidence_threshold = confidence_threshold
         self.points: List[Point] = []
@@ -32,13 +32,14 @@ class Recognizer:
         self.model = self._load_or_train_model()
         self.prediction: Prediction = Prediction(char='', confidence=0.0, rasterized_image=np.zeros((28, 28, 1), dtype=np.float32))
         self.keyboard = Controller()
+        self.detection_timer = detection_timer
 
     def on_point(self, pt: Point) -> None:
         """Call this with each incoming (x,y) point."""
         self.points.append(pt)
         if self._timer:
             self._timer.cancel()
-        self._timer = threading.Timer(2.0, self._on_inactivity)
+        self._timer = threading.Timer(self.detection_timer, self._on_inactivity)
         self._timer.start()
 
     def _on_inactivity(self) -> None:
