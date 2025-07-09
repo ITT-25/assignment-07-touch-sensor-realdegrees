@@ -7,6 +7,8 @@
 3. Setup and activate a virtual env **(Python 3.12)**
 4. `pip install -r requirements.txt`
 
+Both applications can be closed with `Ctrl+C` in the terminal or with `Q` / `ESC` when the preview window is focused.  
+
 # Camera-Based Touch Sensor
 
 Documentation on this task can be found in [documentation.md](documentation.md).  

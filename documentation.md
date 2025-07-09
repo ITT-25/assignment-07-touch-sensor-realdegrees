@@ -108,7 +108,14 @@ I chose between the [$N Recognizer](https://depts.washington.edu/acelab/proj/dol
 The application spawns a DIPPID listener and waits for any `movement` events. When it receives an event, a timer starts (see [README.md](README.md)) and the application begins to collect touch points. The timer is extended with each new event, and when it expires, the application makes a prediction based on the collected points.
 When the `--debug` flag is active, the application shows a preview window visualizing the input data and the prediction. The application also prints the prediction to the console and types it using `pynput` if the confidence is above a certain threshold (see [README.md](README.md)). The window will not show any text indicating this however the border of the rasterization preview will be green if the letter is typed and red if it's not. The application also prints the prediction and key press events in the console.
 
-## 4. Limitations
+## 4. Usage Guide
+
+> ⚠️ A stylus, as suggested in the task description, will likely not work due to the lower threshold for the fingertip detection. The app is designed to work with fingertips first.
+
+Launch the application as described in [README.md](README.md).  
+The [touch_input.py](touch_input.py) application should be running and calibrating in the background with no console output and the text input application will show a preview window. Start drawing a letter on the touch area, you can lift your finger to continue drawing the letter for the duration of the timer specified above. Once you are done with one letter the application will make a prediction, visualize it and fire an input event if the confidence is high enough.
+
+## 5. Limitations
 
 The app does not support digits or uppercase letters. However the training data for them is already available and it would probably work fine with some adjustments. However I didn't really see the need for this as it would be better, in my opinion, to e.g. designate modifier areas on the touch area instead like shift in the bottom left corner or something which could also be pressed by pynput. Most text input applications have auto capitalization anyway and considering the scope of this task I found it more than sufficient to only support lowercase letters.
 
