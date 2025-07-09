@@ -52,7 +52,7 @@ The events that are broadcasted are also printed on the preview window.
 
 ### 1.6 Aspect Ratio
 
-I found that a 16:9 aspect ratio makes the most sense since ultimately this app is supposed to map the movement of the finger 1:1 to a screen and most screens are 16:9 and the camera is as well. In order to properly match up the coordinates I had to slightly modify the code in [fitts_law.py](fitts_law.py) to match the camera's aspect ratio.
+I found that a 16:9 aspect ratio makes the most sense since ultimately this app is supposed to map the movement of the finger 1:1 to a screen and most screens are 16:9 and the camera is as well. In order to properly match up the coordinates I had to slightly modify the code in [fitts_law.py](fitts_law.py) to match the camera's aspect ratio.   **For this reason you must also use the [fitts_law.py](fitts_law.py) application in this repository to ensure the aspect ratio matches up.**
 
 ## 2. Building Process
 
@@ -78,12 +78,16 @@ Instructions on how to launch and configure the application are located in [READ
 Assemble the box so that all marked areas inside the box line up. Put the camera at the designated spot and route the cable through one of the corners. Put the plexiglass on top of the box with the paper taped to it and align the rectangle with the camera view. Launch the application and let it calibrate (If fingertip detection does not work as seen in the example gif, adjust the lighting or trick the app by putting your hand on the touch area during calibration to achieve different thresholds).
 
 Once the app is launched and calibrated you will see the preview window. Put a fingertip on the touch area and it should show the detected contour, enclosing circle and center point around your fingertip. A small debug view in the bottom right also shows the preprocessed image at the step before searching for contours.
-Move your finger
+To register a tap simply press your finger down to cover more area, while the finger is pressed down, tap events will fire at rate of 1 tap per second. All events are broadcasted using DIPPID and can be used in other applications like [fitts_law.py](fitts_law.py) or [text_input.py](text_input.py).
+
+Refer to the preview gif above for a visual example of the touch sensor in action.
 
 ## 4. Limitations
 
 Despite the calibration, the camera seems to not pick pick up the hard shadow of the fingertip against the soft shadow of the finger at the edges of the touch area. This is apparent when simply looking at the webcam image without any processing. This results in taps not being registered correctly sometimes at the very edges of the touch area.
 This is a hardware limitation I was not able to fix with my setup but I assume it would have worked better with a taller box or if making the touch area even smaller but neither of these options were a practical solution to me. The best solution would be to use a camera with a wider FoV to allow for larger touch area without having to make the box taller, less stable and less practical to use.
+
+Due to the way I implemented the history and indexation and stabilization of different fingertips using a movement delta threshold, fast movements will not register. You can move your finger at a reasonable pace however the app will not function when zipping around the touch area at high speeds. This is a limitation of the current implementation and could be improved by using a more sophisticated tracking algorithm, by increasing the movement delta threshold, or by removing the capability to track multiple fingers entirely. However I found the tracking of multiple fingers pretty cool and even had scroll and multitouch events implemented at one point so I decided to leave it as it is more flexible and open for future improvements/extensions this way.
 
 # Touch-based Text Input
 
@@ -120,3 +124,5 @@ The [touch_input.py](touch_input.py) application should be running and calibrati
 The app does not support digits or uppercase letters. However the training data for them is already available and it would probably work fine with some adjustments. However I didn't really see the need for this as it would be better, in my opinion, to e.g. designate modifier areas on the touch area instead like shift in the bottom left corner or something which could also be pressed by pynput. Most text input applications have auto capitalization anyway and considering the scope of this task I found it more than sufficient to only support lowercase letters.
 
 Full word input is not possible either since by design only single letters can be recognized. For full word recognition OCR would probably be more suitable but single letter input provides the most flexibility.
+
+There are also some gaps in the event data for some reason that I was unable to find, I assume something is blocking the thread every now and then but I didn't bother fixing it because it only really affects the debug view, due to points auto connecting and the downscaling during the rasterization step the actual input for the CNN is not affected by this.  
