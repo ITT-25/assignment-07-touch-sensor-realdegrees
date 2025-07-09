@@ -59,6 +59,7 @@ python text_input.py -t 1.5 -d
 | Parameter | Short Option | Default | Description |
 |-----------|--------------|---------|-------------|
 | `--port` | `-p` | `5700` | Port to broadcast events to (DIPPID) |
-| `--confidence-threshold` | | `0.9` | Minimum confidence threshold for auto-typing, if it is below the threshold the character will not be typed by pynput |
+| `--confidence-threshold` | `-c` | `0.9` | Minimum confidence threshold for auto-typing, if it is below the threshold the character will not be typed by pynput |
 | `--debug` | `-d` | `False` | Enable debug mode (Whether to show preview window or not) |
 | `--detection-timer` | `-t` | `1.5` | The amount of time in seconds to wait after the last input before making a prediction (seconds) |
+| `--model-type` | `-m` | `lower` | Model type to use: 'full' for digits+uppercase+lowercase, 'lower' for lowercase only |

@@ -10,7 +10,7 @@ from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.utils import to_categorical
 import tensorflow_datasets as tfds
 from sklearn.model_selection import train_test_split
-from pynput.keyboard import Controller
+from pynput.keyboard import Controller, Key
 
 Point = Tuple[float, float]
 @dataclass
@@ -24,8 +24,9 @@ class Prediction:
 
 
 class Recognizer:
-    def __init__(self, model_path: str = "text_input.keras", *, confidence_threshold: float, detection_timer: float) -> None:
-        self.model_path = model_path
+    def __init__(self, model_path: str = None, *, confidence_threshold: float, detection_timer: float, model_type: str = "full") -> None:
+        self.model_type = model_type
+        self.model_path = model_path or f"text_input_{model_type}.keras"
         self.confidence_threshold = confidence_threshold
         self.points: List[Point] = []
         self._timer: Optional[threading.Timer] = None
@@ -33,6 +34,68 @@ class Recognizer:
         self.prediction: Prediction = Prediction(char='', confidence=0.0, rasterized_image=np.zeros((28, 28, 1), dtype=np.float32))
         self.keyboard = Controller()
         self.detection_timer = detection_timer
+
+    def _label_to_char(self, label: int) -> str:
+        """Convert model label to character based on model type."""
+        if self.model_type == "lower":
+            # For lowercase-only model: labels 0-25 map to 'a'-'z'
+            if 0 <= label <= 25:
+                return chr(ord('a') + label)
+            else:
+                return '?'
+        else:  # full model
+            # EMNIST byclass mapping:
+            # 0-9: digits '0'-'9'
+            # 10-35: uppercase 'A'-'Z'
+            # 36-61: lowercase 'a'-'z'
+            if 0 <= label <= 9:
+                return str(label)
+            elif 10 <= label <= 35:
+                return chr(ord('A') + label - 10)
+            elif 36 <= label <= 61:
+                return chr(ord('a') + label - 36)
+            else:
+                return '?'
+
+    def _char_to_label(self, char: str) -> int:
+        """Convert character to model label based on model type."""
+        if self.model_type == "lower":
+            # For lowercase-only model: 'a'-'z' map to labels 0-25
+            if char.islower():
+                return ord(char) - ord('a')
+            else:
+                return -1
+        else:  # full model
+            # EMNIST byclass mapping
+            if char.isdigit():
+                return int(char)
+            elif char.isupper():
+                return ord(char) - ord('A') + 10
+            elif char.islower():
+                return ord(char) - ord('a') + 36
+            else:
+                return -1
+
+    def _press_key(self, char: str) -> None:
+        """Press the appropriate key using pynput, handling capitalization."""
+        if char.isdigit():
+            # For digits, just press the key
+            self.keyboard.press(char)
+            self.keyboard.release(char)
+        elif char.isupper():
+            # For uppercase letters, press shift + letter
+            self.keyboard.press(Key.shift)
+            self.keyboard.press(char.lower())
+            self.keyboard.release(char.lower())
+            self.keyboard.release(Key.shift)
+        elif char.islower():
+            # For lowercase letters, just press the key
+            self.keyboard.press(char)
+            self.keyboard.release(char)
+        else:
+            # Fallback for unknown characters
+            self.keyboard.press(char)
+            self.keyboard.release(char)
 
     def on_point(self, pt: Point) -> None:
         """Call this with each incoming (x,y) point."""
@@ -51,15 +114,14 @@ class Recognizer:
         pred = self.model.predict(img[np.newaxis, ..., np.newaxis], verbose=0)[0]
         label = int(np.argmax(pred))
         confidence = float(pred[label])
-        char = chr(label + ord('a'))
+        char = self._label_to_char(label)
         rasterized_image = img[np.newaxis, ..., np.newaxis]
         self.prediction = Prediction(char=char, confidence=confidence, rasterized_image=rasterized_image)
         print(f"Predicted: {self.prediction}")
         
         # Automatically press the key if confidence is high
         if confidence > self.confidence_threshold:
-            self.keyboard.press(char)
-            self.keyboard.release(char)
+            self._press_key(char)
             print(f"Auto-pressed key: {char}")
         
         self.points.clear()
@@ -123,10 +185,10 @@ class Recognizer:
     def _load_or_train_model(self) -> models.Model:
         try:
             model = models.load_model(self.model_path)
-            print("Loaded existing EMNIST model.")
+            print(f"Loaded existing {self.model_type} model from {self.model_path}")
             return model
         except Exception:
-            print("Training new EMNIST CNN model...")
+            print(f"Training new {self.model_type} EMNIST CNN model...")
             return self._train_model()
 
     def _train_model(self) -> models.Model:        
@@ -142,15 +204,20 @@ class Recognizer:
         X_test_list, y_test_list = [], []
         
         # Load a subset of data for faster training
-        max_train_samples = 150000
+        max_train_samples = 200000
         max_test_samples = 50000
 
-        # TODO: try using all classes instead of lower case only if accuracy is good now
-        # Process training data
+        # Process training data based on model type
         for image, label in train:
-            if not label.numpy() >= 36:  # Only process lowercase letters from the "byclass" split
-                continue
-            label_val = label.numpy() - 36
+            label_val = label.numpy()
+            
+            if self.model_type == "lower":
+                # Only process lowercase letters (labels 36-61 in EMNIST byclass)
+                if not (36 <= label_val <= 61):
+                    continue
+                # Remap to 0-25 for lowercase-only model
+                label_val = label_val - 36
+            # For full model, use all classes as-is
             
             # Process image
             img = tf.cast(image, tf.float32) / 255.0
@@ -164,11 +231,17 @@ class Recognizer:
             if len(X_train_list) >= max_train_samples:
                 break
 
-        # Process test data        
+        # Process test data based on model type        
         for image, label in test:
-            if not label.numpy() >= 36:  # Only process lowercase letters, same as training
-                continue
-            label_val = label.numpy() - 36
+            label_val = label.numpy()
+            
+            if self.model_type == "lower":
+                # Only process lowercase letters (labels 36-61 in EMNIST byclass)
+                if not (36 <= label_val <= 61):
+                    continue
+                # Remap to 0-25 for lowercase-only model
+                label_val = label_val - 36
+            # For full model, use all classes as-is
             
             img = tf.cast(image, tf.float32) / 255.0
             img = tf.image.transpose(img)
@@ -185,8 +258,11 @@ class Recognizer:
         X_test = np.array(X_test_list)
         y_test = np.array(y_test_list)
         
+        # Set number of classes based on model type
+        num_classes = 26 if self.model_type == "lower" else 62
+        
         # Convert labels to categorical
-        y_train_cat = to_categorical(y_train, num_classes=26)
+        y_train_cat = to_categorical(y_train, num_classes=num_classes)
         
         # Split training data into train/validation
         X_train, X_val, y_train, y_val = train_test_split(
@@ -198,11 +274,12 @@ class Recognizer:
         X_val = X_val[..., np.newaxis]
         X_test = X_test[..., np.newaxis]
         
+        print(f"Training {self.model_type} model with {num_classes} classes")
         print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
         print(f"X_val shape: {X_val.shape}, y_val shape: {y_val.shape}")
         print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
 
-        # Define a more efficient model architecture with fewer parameters
+        # Define model architecture with appropriate output classes
         model = models.Sequential([
             layers.Input(shape=(28, 28, 1)),
             # First conv block
@@ -225,7 +302,7 @@ class Recognizer:
             layers.LeakyReLU(alpha=0.1),
             layers.BatchNormalization(),
             layers.Dropout(0.4),
-            layers.Dense(26, activation='softmax')
+            layers.Dense(num_classes, activation='softmax')
         ])
         
         model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
@@ -248,9 +325,9 @@ class Recognizer:
         )
         
         # Evaluate on test set
-        y_test_cat = to_categorical(y_test, num_classes=26)
+        y_test_cat = to_categorical(y_test, num_classes=num_classes)
         test_loss, test_acc = model.evaluate(X_test, y_test_cat, verbose=0)
-        print(f"EMNIST test accuracy: {test_acc*100:.2f}%")
+        print(f"{self.model_type.title()} model test accuracy: {test_acc*100:.2f}%")
         
         # Save model
         model.save(self.model_path)

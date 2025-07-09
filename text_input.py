@@ -31,9 +31,21 @@ from src.recognizer import Recognizer
     type=float,
     show_default=True,
 )
-def main(debug: bool, port: int, confidence_threshold: float, detection_timer: float) -> None:
+@click.option(
+    "--model-type",
+    "-m",
+    default="lower",
+    type=click.Choice(["full", "lower"]),
+    help="Model type to use: 'full' for digits+uppercase+lowercase, 'lower' for lowercase only",
+    show_default=True,
+)
+def main(debug: bool, port: int, confidence_threshold: float, detection_timer: float, model_type: str) -> None:
     sensor = SensorUDP(port)
-    recognizer = Recognizer(confidence_threshold=confidence_threshold, detection_timer=detection_timer)
+    recognizer = Recognizer(
+        confidence_threshold=confidence_threshold, 
+        detection_timer=detection_timer,
+        model_type=model_type
+    )
 
     def handle_movement(data):
         recognizer.on_point((data['x'], 450 - data['y'])) # Invert y because we are receiving pyglet adjusted coordinates

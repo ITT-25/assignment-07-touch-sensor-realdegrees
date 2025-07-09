@@ -101,28 +101,42 @@ I decided to implement this application in a similar way to the [fitts_law.py](f
 
 ## 1. Dataset
 
-I used the [Extended MNIST](https://www.tensorflow.org/datasets/catalog/emnist#emnistbyclass_default_config) dataset for training the model. It is contained in the [tdfs](https://www.tensorflow.org/datasets/api_docs/python/tfds) library and automatically downloaded on the first launch of the application. To reduce training time I only used a subset of the dataset and in order for the classification to be more accurate I extracted only **lowercase letters** from the dataset. The data is conventionally split into a training and test set. The images are transformed to be up right like the input data.  
+I used the [Extended MNIST](https://www.tensorflow.org/datasets/catalog/emnist#emnistbyclass_default_config) dataset for training the model. It is contained in the [tdfs](https://www.tensorflow.org/datasets/api_docs/python/tfds) library and automatically downloaded on the first launch of the application. To reduce training time I only used a subset of the dataset. 
+
+The application supports two model types:
+- **Full model** (`--model-type full`): Includes digits (0-9), uppercase letters (A-Z), and lowercase letters (a-z) from the dataset. This is the default model.
+- **Lowercase-only model** (`--model-type lower`): Only includes lowercase letters (a-z) for more accurate classification of lowercase characters.
+
+The data is conventionally split into a training and test set. The images are transformed to be up right like the input data.  
 
 ## 2. Model
 
-I chose between the [$N Recognizer](https://depts.washington.edu/acelab/proj/dollar/ndollar.html), OCR (Tesseract) and a CNN. I couldn't find a good $N python implementation to use and OCR was not very reliable so I went with a CNN. The model uses 2 convolutional layers and 2 dense layers and is stored in [text_input.keras](text_input.keras) for convenience. If you want to retrain the model simply delete the file and run the application again, it will automatically download the dataset and train the model. The training process takes around 15 minutes on decent hardware. 
+I chose between the [$N Recognizer](https://depts.washington.edu/acelab/proj/dollar/ndollar.html), OCR (Tesseract) and a CNN. I couldn't find a good $N python implementation to use and OCR was not very reliable so I went with a CNN. The model uses 2 convolutional layers and 2 dense layers and is stored in separate files based on the model type (e.g., `text_input_full.keras` or `text_input_lower.keras`) for convenience. If you want to retrain a model simply delete the corresponding file and run the application again, it will automatically download the dataset and train the model. The training process takes around 15 minutes on decent hardware.
+
+The application supports two model configurations:
+- **Full model**: Recognizes 62 classes (digits, uppercase, and lowercase letters). While comprehensive, this model tends to be less accurate due to the increased complexity of distinguishing between similar characters across different cases.
+- **Lowercase-only model**: Recognizes only 26 classes (lowercase letters). This model generally provides better accuracy for lowercase letter recognition due to the reduced complexity and more focused training. 
 
 ## 3. Application
 
 The application spawns a DIPPID listener and waits for any `movement` events. When it receives an event, a timer starts (see [README.md](README.md)) and the application begins to collect touch points. The timer is extended with each new event, and when it expires, the application makes a prediction based on the collected points.
-When the `--debug` flag is active, the application shows a preview window visualizing the input data and the prediction. The application also prints the prediction to the console and types it using `pynput` if the confidence is above a certain threshold (see [README.md](README.md)). The window will not show any text indicating this however the border of the rasterization preview will be green if the letter is typed and red if it's not. The application also prints the prediction and key press events in the console.
+
+The model type can be selected via the `--model-type` CLI parameter (see [README.md](README.md)). The full model supports digits and both uppercase and lowercase letters, while the lowercase-only model provides better accuracy for lowercase letter recognition.
+
+When the `--debug` flag is active, the application shows a preview window visualizing the input data and the prediction. The application also prints the prediction to the console and types it using `pynput` if the confidence is above a certain threshold (see [README.md](README.md)). For uppercase letters in the full model, the application automatically handles the shift key combination. The window will not show any text indicating this however the border of the rasterization preview will be green if the letter is typed and red if it's not. The application also prints the prediction and key press events in the console.
 
 ## 4. Usage Guide
 
 > ⚠️ A stylus, as suggested in the task description, will likely not work due to the lower threshold for the fingertip detection. The app is designed to work with fingertips first.
 
-Launch the application as described in [README.md](README.md).  
+Launch the application as described in [README.md](README.md). You can choose between the full model (default) or the lowercase-only model using the `--model-type` parameter. The lowercase-only model (`--model-type lower`) generally provides better accuracy for lowercase letter recognition.
+
 The [touch_input.py](touch_input.py) application should be running and calibrating in the background with no console output and the text input application will show a preview window. Start drawing a letter on the touch area, you can lift your finger to continue drawing the letter for the duration of the timer specified above. Once you are done with one letter the application will make a prediction, visualize it and fire an input event if the confidence is high enough.
 
 ## 5. Limitations
 
-The app does not support digits or uppercase letters. However the training data for them is already available and it would probably work fine with some adjustments. However I didn't really see the need for this as it would be better, in my opinion, to e.g. designate modifier areas on the touch area instead like shift in the bottom left corner or something which could also be pressed by pynput. Most text input applications have auto capitalization anyway and considering the scope of this task I found it more than sufficient to only support lowercase letters.
+The application supports both a full model (digits, uppercase, and lowercase letters) and a lowercase-only model. The full model, while more comprehensive, tends to be less accurate due to the increased complexity of distinguishing between similar characters across different cases. The lowercase-only model provides better accuracy for lowercase letter recognition and is recommended when only lowercase input is needed.
 
-Full word input is not possible either since by design only single letters can be recognized. For full word recognition OCR would probably be more suitable but single letter input provides the most flexibility.
+Both models are designed for single letter recognition rather than full word input. For full word recognition, OCR would probably be more suitable, but single letter input provides the most flexibility.
 
 There are also some gaps in the event data for some reason that I was unable to find, I assume something is blocking the thread every now and then but I didn't bother fixing it because it only really affects the debug view, due to points auto connecting and the downscaling during the rasterization step the actual input for the CNN is not affected by this.  
