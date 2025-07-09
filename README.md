@@ -26,3 +26,5 @@ python touch_input.py -c 0 -d
 | `--host` | | `127.0.0.1` | Host to broadcast events to (DIPPID) |
 | `--port` | `-p` | `5700` | Port to broadcast events to (DIPPID) |
 | `--calibration-frames` | | `5` | Number of frames to use for brightness calibration |
+
+# Touch-based Text Input

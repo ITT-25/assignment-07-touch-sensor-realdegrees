@@ -59,3 +59,13 @@ Instructions on how to launch and configure the application are located in [READ
 Assemble the box so that all marked areas inside the box line up. Put the camera at the designated spot and route the cable through one of the corners. Put the plexiglass on top of the box with the paper taped to it and align the rectangle with the camera view. Launch the application and let it calibrate (If fingertip detection does not work as seen in the example gif, adjust the lighting or trick the app by putting your hand on the touch area during calibration to achieve different thresholds).
 
 Once the app is launched and calibrated you will see the preview window. Put a fingertip on the touch area and it should show the detected contour, enclosing circle and center point around your fingertip. A small debug view in the bottom right also shows the preprocessed image at the step before searching for contours.
+
+# Touch-based Text Input
+
+Instructions on how to launch and configure the application are located in [README.md](README.md).
+
+---
+
+I decided to implement this application in a similar way to the [fitts_law.py](fitts_law.py) application using DIPPID as a protocol to read the input events. This way the text input is entirely separate and independent of the touch sensor application itself.
+
+## 1. T
